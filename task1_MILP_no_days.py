@@ -1,9 +1,9 @@
 from pyomo.environ import *
-from PlotsRestaurant import plot_HVAC_results
+from data.PlotsRestaurant import plot_HVAC_results
 import csv
 import matplotlib.pyplot as plt
 import numpy as np
-from SystemCharacteristics import get_fixed_data
+from data.SystemCharacteristics import get_fixed_data
 data = get_fixed_data()
 
 # The following script/modelling structure is based on the v3StudentProblem script given.
