@@ -7,15 +7,15 @@ class HindsightPolicy:
 
     def __init__(self):
         # Prices: shape (num_days, num_timeslots)
-        self.prices = np.genfromtxt("data/PriceData.csv", delimiter=",", skip_header=1)
+        self.prices = np.genfromtxt("data/v2_PriceData.csv", delimiter=",", skip_header=1)
 
         # Occupancies: shape (num_rooms, num_days, num_timeslots)
         occ_room1 = np.genfromtxt("data/OccupancyRoom1.csv", delimiter=",", skip_header=1)
         occ_room2 = np.genfromtxt("data/OccupancyRoom2.csv", delimiter=",", skip_header=1)
         self.occupancy = np.stack([occ_room1, occ_room2], axis=0)
 
-        # day (given externally)
-        self.day = None
+        # day
+        self.day = -1
 
         # actions for the given day
         self.actions_day = []
@@ -35,7 +35,7 @@ class HindsightPolicy:
         #### parameters (in order from Solution_to_assignment_partA_2026-pdf) ###
 
         model.lambda_tilde = Param(model.T,
-                            initialize={t: self.prices[day, t]
+                            initialize={t: self.prices[day, t+1]
                                         for t in model.T})
         # find data for the relevant day
         occ_day = {(r, t): self.occupancy[r, day, t] for r in model.R for t in model.T}
@@ -190,6 +190,8 @@ class HindsightPolicy:
         t = state["current_time"]
 
         if t == 0: # if at the beginning of the day, find actions for the day
+            self.day += 1
+
             self.actions_day = []
             # Solve once for the full day
             model = self.build_model_for_day(self.day)
@@ -200,9 +202,9 @@ class HindsightPolicy:
             for t_m in model.T:
                 self.actions_day.append(
                     {
-                        "p1": value(model.p[0, t_m]),
-                        "p2": value(model.p[1, t_m]),
-                        "v":  value(model.v[t_m])
+                        "HeatPowerRoom1": value(model.p[0, t_m]),
+                        "HeatPowerRoom2": value(model.p[1, t_m]),
+                        "VentilationON":  value(model.v[t_m])
                     }
                 )
 
