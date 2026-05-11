@@ -1,15 +1,11 @@
-from tasks.Environment_task6 import *
+from tasks.Environment_task6 import environment
+from tasks.SP_policy_task3 import SPPolicy
+from tasks.Dummy_policy import DummyPolicy
+from tasks.hindsight_policy_task1 import HindsightPolicy
 
-### Dummy policy test ###
-# from tasks.Dummy_policy import *
-# policy = DummyPolicy()
-
-### Hindsight policy test ###
-from tasks.hindsight_policy_task1 import *
-policy = HindsightPolicy()
-
-
-# print(f"Average daily cost: {environment(policy)}")
+print("Dummy policy:    ", environment(DummyPolicy()))
+print("SP policy:       ", environment(SPPolicy()))
+print("Hindsight policy:", environment(HindsightPolicy()))
 
 
 import matplotlib.pyplot as plt
