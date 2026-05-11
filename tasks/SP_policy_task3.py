@@ -227,4 +227,4 @@ def _select_action(state):
         p1 = Pbar if state["low_override_r1"] == 1 else 0.0
         p2 = Pbar if state["low_override_r2"] == 1 else 0.0
 
-    return {"p1": p1, "p2": p2, "v": v0}
+    return {"HeatPowerRoom1": p1, "HeatPowerRoom2": p2, "VentilationON": v0}
