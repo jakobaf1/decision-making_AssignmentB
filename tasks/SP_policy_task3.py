@@ -58,7 +58,12 @@ def _build_tree(state):
     return nodes
 
 
-def select_action(state):
+class SPPolicy:
+    def select_action(self, state):
+        return _select_action(state)
+
+
+def _select_action(state):
     nodes = _build_tree(state)
     nm = {n["idx"]: n for n in nodes}
     ids = [n["idx"] for n in nodes]
@@ -222,8 +227,4 @@ def select_action(state):
         p1 = Pbar if state["low_override_r1"] == 1 else 0.0
         p2 = Pbar if state["low_override_r2"] == 1 else 0.0
 
-    return {
-        "HeatPowerRoom1": p1,
-        "HeatPowerRoom2": p2,
-        "VentilationON":  v0
-    }
+    return {"p1": p1, "p2": p2, "v": v0}
