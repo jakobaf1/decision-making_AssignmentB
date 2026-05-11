@@ -67,14 +67,14 @@ def environment(policy):
                     + data["heat_exchange_coeff"]*(state["T2"] - state["T1"])
                     + data["thermal_loss_coeff"]*(data["outdoor_temperature"][t] - state["T1"])
                     + data["heating_efficiency_coeff"]*p[0]
-                    + data["heat_vent_coeff"]*v
+                    - data["heat_vent_coeff"]*v
                     + data["heat_occupancy_coeff"]*occupancy[0, day, t]
                     )
             new_T2 = (state["T2"]
                     + data["heat_exchange_coeff"]*(state["T1"] - state["T2"])
                     + data["thermal_loss_coeff"]*(data["outdoor_temperature"][t] - state["T2"])
                     + data["heating_efficiency_coeff"]*p[1]
-                    + data["heat_vent_coeff"]*v
+                    - data["heat_vent_coeff"]*v
                     + data["heat_occupancy_coeff"]*occupancy[1, day, t]
                     )
             # humidity dynamics
@@ -92,9 +92,9 @@ def environment(policy):
             
             y2 = 0
             if new_T2 <= data["temp_min_comfort_threshold"]:
-                y1 = 1
-            elif state["low_override_r1"] == 1 and new_T2 < data["temp_OK_threshold"]:
-                y1 = 1
+                y2 = 1
+            elif state["low_override_r2"] == 1 and new_T2 < data["temp_OK_threshold"]:
+                y2 = 1
 
             # ventilation consecutive hours counter
             new_c = state["vent_counter"] + 1 if v == 1 else 0
