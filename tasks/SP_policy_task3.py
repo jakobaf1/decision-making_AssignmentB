@@ -1,5 +1,6 @@
 from pyomo.environ import *
 import numpy as np
+from sklearn.cluster import KMeans
 from data.v2_SystemCharacteristics import get_fixed_data
 
 data = get_fixed_data()
@@ -19,19 +20,29 @@ def _next_price(price, prev_price):
     return float(max(min(next_p, 12.0), 0.0))
 
 # Scenario tree parameters
-N_BRANCHES = 3
+N_BRANCHES    = 3    # number of cluster centroids kept per parent
 MAX_LOOKAHEAD = 3
+N_SAMPLES     = 30   # candidate children drawn per parent before clustering
 
 def _build_tree(state):
     """
-    Build a scenario tree from current state.
-    Stage 0 = current hour (exogenous already observed).
-    Stage 1..L = sampled future hours.
-    Returns list of node dicts.
+    Build a scenario tree using iterative branch-and-cluster.
+
+    At each stage we expand every frontier node by:
+      1. Drawing N_SAMPLES candidate children from the stochastic process models.
+      2. Clustering those candidates into N_BRANCHES groups with KMeans.
+      3. Replacing each group with its centroid — one child node per cluster.
+      4. Setting child probability = parent_prob * (cluster_size / N_SAMPLES).
+    The centroids become the new frontier for the next stage.
+
+    Stage 0 is the root (current observed state, probability 1).
+    Stages 1..L are the lookahead horizon.
+    Node structure is unchanged: {idx, stage, parent, prob, occ1, occ2, price, price_prev}.
     """
     t0 = state["current_time"]
     L = min(data["num_timeslots"] - t0 - 1, MAX_LOOKAHEAD)
 
+    # --- Root node: current observed state, probability 1 ---
     nodes = [{
         "idx": 0, "stage": 0, "parent": None, "prob": 1.0,
         "occ1": state["Occ1"], "occ2": state["Occ2"],
@@ -39,24 +50,46 @@ def _build_tree(state):
     }]
 
     frontier = [0]
+
     for _ in range(L):
         nxt = []
         for pid in frontier:
             p = nodes[pid]
-            for _ in range(N_BRANCHES):
+
+            # Step 1 — draw N_SAMPLES candidate children for this parent.
+            # Each sample is [occ1, occ2, price]; price_prev is always p["price"].
+            raw = np.empty((N_SAMPLES, 3))
+            for i in range(N_SAMPLES):
                 o1, o2 = _next_occupancy(p["occ1"], p["occ2"])
-                pr = _next_price(p["price"], p["price_prev"])
+                pr      = _next_price(p["price"], p["price_prev"])
+                raw[i]  = [o1, o2, pr]
+
+            # Step 2 — cluster the N_SAMPLES candidates into N_BRANCHES groups.
+            # n_init=3 is sufficient for 30 points / 3 clusters.
+            km      = KMeans(n_clusters=N_BRANCHES, n_init=3, random_state=None)
+            labels  = km.fit_predict(raw)          # shape (N_SAMPLES,)
+            centers = km.cluster_centers_          # shape (N_BRANCHES, 3)
+
+            # Step 3 & 4 — one child node per centroid, weighted by cluster size.
+            for k in range(N_BRANCHES):
+                cluster_size = int(np.sum(labels == k))
+                child_prob   = p["prob"] * (cluster_size / N_SAMPLES)
+                o1c, o2c, prc = centers[k]
                 nodes.append({
-                    "idx": len(nodes), "stage": p["stage"] + 1,
-                    "parent": pid, "prob": p["prob"] / N_BRANCHES,
-                    "occ1": o1, "occ2": o2,
-                    "price": pr, "price_prev": p["price"]
+                    "idx":        len(nodes),
+                    "stage":      p["stage"] + 1,
+                    "parent":     pid,
+                    "prob":       child_prob,
+                    "occ1":       float(o1c),
+                    "occ2":       float(o2c),
+                    "price":      float(prc),
+                    "price_prev": p["price"],
                 })
                 nxt.append(nodes[-1]["idx"])
+
         frontier = nxt
 
     return nodes
-
 
 class SPPolicy:
     def select_action(self, state):
@@ -213,8 +246,8 @@ def _select_action(state):
     )
 
     solver = SolverFactory("gurobi")
-    solver.options["TimeLimit"] = 12
-    solver.options["MIPGap"]    = 0.01
+    solver.options["TimeLimit"] = 5
+    solver.options["MIPGap"]    = 0.03
     solver.solve(mdl, tee=False)
 
     try:
