@@ -6,7 +6,7 @@ import numpy as np
 from tasks.Environment_task6 import *
 from tasks.Dummy_policy import *
 from tasks.hindsight_policy_task1 import *
-
+from tasks.Hybrid_policy_7 import *
 from tasks.distributed_policy_task7 import *
 
 
@@ -53,6 +53,8 @@ def main():
             policy = DummyPolicy()
         elif args.name == "hindsight":
             policy = HindsightPolicy()
+        elif args.name == "hybrid":
+            policy = HybridPolicy()
         else:
             raise NotImplementedError(f"Policy '{args.name}' not yet implemented.")
 

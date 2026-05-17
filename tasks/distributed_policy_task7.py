@@ -133,9 +133,9 @@ class distributed_policy:
             
         model.room_temp = Constraint(model.R, model.T, rule=temperature_dynamics)
 
-        # def heating_power_limits_lb(m,r,t):
-        #     return 0 <= m.p[r,t]
-        # model.heating_power_limits_lb = Constraint(model.R, model.T, rule = heating_power_limits_lb)
+        def heating_power_limits_lb(m,r,t):
+            return 0 <= m.p[r,t]
+        model.heating_power_limits_lb = Constraint(model.R, model.T, rule = heating_power_limits_lb)
 
         def heating_power_limits_ub(m,r,t):
             return m.p[r,t] <= m.P_bar[r]
@@ -176,7 +176,7 @@ class distributed_policy:
 
             for n in range(self.N):
 
-                model = self.build_model_distributed(n, lambda_pen)
+                model = self.build_model_distributed((n+1), lambda_pen)
                 solver = SolverFactory('gurobi')
                 solver.solve(model)
 
@@ -330,8 +330,4 @@ class distributed_policy:
 
         # print(f"Objective value for full model: {value(model.obj)}")
         return value(model.obj), [sum((value(model.p[n,r,t])) for r in model.R for t in model.T) for n in range(1,16)]
-
-    
-    def select_action(self, state):
-        return 
     

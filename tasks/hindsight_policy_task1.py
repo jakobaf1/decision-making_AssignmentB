@@ -49,8 +49,8 @@ class HindsightPolicy:
         model.T_high = Param(initialize=data["temp_max_comfort_threshold"])
         model.T_ok = Param(initialize=data["temp_OK_threshold"])
         model.H_high = Param(initialize=data["humidity_threshold"])
-        model.M_temp = Param(initialize=data["temp_max_comfort_threshold"])
-        model.M_hum = Param(initialize=data["humidity_threshold"])
+        model.M_temp = Param(initialize=100)
+        model.M_hum = Param(initialize=100)
         model.U_vent = Param(initialize=data["vent_min_up_time"])
 
         model.xi_exch = Param(initialize=data["heat_exchange_coeff"])

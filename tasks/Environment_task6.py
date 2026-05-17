@@ -47,8 +47,10 @@ def environment(policy):
             v = action["VentilationON"]
             if state["H"] > data["humidity_threshold"]:
                 v = 1
-            elif state["vent_counter"] in [1, 2]:
+            elif 0 < state["vent_counter"] and state["vent_counter"] < data["vent_min_up_time"]:
                 v = 1
+            # elif state["vent_counter"] in [1, 2]: # hardcoded version based on solution to part A
+            #     v = 1
 
             # heating power
             p = [0, 0]
@@ -122,7 +124,7 @@ def environment(policy):
                 state["current_time"] = t + 1
                 state["price_previous"] = state["price_t"]
                 
-                state["price_t"] = prices[day,t+2]
+                state["price_t"] = prices[day,t+2] # +2: 1 for next day and 1 for the initial price at start of day indexing
                 state["Occ1"] = occupancy[0,day,t+1]
                 state["Occ2"] = occupancy[1,day,t+1]
             
