@@ -247,7 +247,6 @@ def _select_action(state):
 
     solver = SolverFactory("gurobi")
     solver.options["TimeLimit"] = 5
-    solver.options["MIPGap"]    = 0.03
     solver.solve(mdl, tee=False)
 
     try:
